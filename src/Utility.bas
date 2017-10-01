@@ -13,15 +13,12 @@ Const VAR_TYPE_BOOLEAN As String = "11"
 Const cnsDIR As String = "\*.*"
 
 
-
-
-
 'ダイアログからファイルを1つ選択する。
 '選択したファイルのフルパスを戻り値とする。
 '
 '@parm(Optional) fileFilter ダイアログに表示するファイルの拡張子
 '@parm(Optional) dialogTitle　ダイアログのタイトル
-'@return OpenFileName 選択したファイルのフルパス。キャンセルを選択した時は「False」(String型)。
+'@return openFileFullPaht 選択したファイルのフルパス。キャンセルを選択した時は「False」(String型)。
 Function fetchFileFullPath(Optional fileFilter As String = "*", Optional dialogTitle As String = "ファイルを選択してください。") As String
 
     Dim currentFolderPath As String
@@ -34,15 +31,21 @@ Function fetchFileFullPath(Optional fileFilter As String = "*", Optional dialogT
     Dim argFileFilter As String
     argFileFilter = ",*." + fileFilter
     
-    Dim openFileName As String
-    openFileName = Application.GetOpenFilename(Title:=dialogTitle, fileFilter:=argFileFilter)
+    Dim openFileFullPaht As String
+    openFileFullPaht = Application.GetOpenFilename(Title:=dialogTitle, fileFilter:=argFileFilter)
     
     ChDir currentFolderPath
     
-    fetchFileFullPath = openFileName
+    fetchFileFullPath = openFileFullPaht
 
 End Function
 
+
+'ダイアログからファイルを複数選択する。選択した全ファイルのフルパスを格納したコレクションをを戻り値とする。
+'
+'@parm(Optional) fileFilter ダイアログに表示するファイルの拡張子
+'@parm(Optional) dialogTitle　ダイアログのタイトル
+'@return openFileFullPaht 選択したファイルのフルパス。キャンセルを選択した時は「False」(String型)。
 Function fetchFilesFullPath(Optional fileFilter As String = "*", Optional dialogTitle As String = "ファイルを選択してください。（複数選択可）") As Collection
 
     Dim i As Long
@@ -58,26 +61,26 @@ Function fetchFilesFullPath(Optional fileFilter As String = "*", Optional dialog
     Dim argFileFilter As String
     argFileFilter = ",*." + fileFilter
 
-    Dim appGetOpenFilenameResult As Variant
+    Dim appGetOpenFileResult As Variant
     appGetOpenFilenameResult = Application.GetOpenFilename(Title:=dialogTitle, fileFilter:=argFileFilter, MultiSelect:=True)
 
     'カレントディレクトリの戻し
     ChDir currentFolderPath
     
     'String型配列への変換
-    Dim openFileNames As Collection
-    Set openFileNames = New Collection
+    Dim openFileFullPaths As Collection
+    Set openFileFullPaths = New Collection
     
     'キャンセルを選択している場合
     If (VarType(appGetOpenFilenameResult) = VAR_TYPE_BOOLEAN) Then
-        openFileNames.Add (STR_FALSE)
-        Set fetchFilesFullPath = openFileNames
+        openFileFullPaths.Add (STR_FALSE)
+        Set fetchFilesFullPath = openFileFullPaths
     'ファイルを選択している場合
     Else
         For i = 1 To UBound(appGetOpenFilenameResult) Step 1
-            openFileNames.Add (appGetOpenFilenameResult(i))
+            openFileFullPaths.Add (appGetOpenFilenameResult(i))
         Next i
-        Set fetchFilesFullPath = openFileNames
+        Set fetchFilesFullPath = openFileFullPaths
     End If
     
 End Function
@@ -169,27 +172,21 @@ Function fetchFileList(Optional folderPath As String) As Collection
 End Function
 
 
-'引数のブックを末尾に現在日時を付与して保存して閉じる
+'引数①の拡張子付きファイル名の拡張子の手前に「_」と引数②を付与して戻り値とする
 '
-'@param wb ワークブック（名前を付けて保存する対象）
-Sub closeAfterSaveAsBookNowTime(ByVal wb As Workbook)
+'@parm nowFilename 現在のファイル名
+'@parm addString ファイル名に付け加える文字列
+'@return newFilename 「_」と文字列が追加されたファイル名
+Function AddStringFilename(ByVal nowFilename As String, ByVal addString As String) As String
 
-    '現在日時を生成
-    Dim nowTime As String
-    nowTime = Format(Now, "yyyymmddHHMMSS")
-    
-    '新しいファイル名の生成
+    Dim filename As String
     Dim newFileNeme As String
-    Dim oldFileName As String
     Dim fileExtension As String
-    
-    oldFileName = Left(wb.Name, InStrRev(wb.Name, ".") - 1)
-    fileExtension = Mid(wb.Name, InStrRev(wb.Name, ".") + 1, Len(wb.Name))
-    newFileNeme = oldFileName & "_" & nowTime & "." & fileExtension
-    
-    '名前を付けて保存した後に閉じる
-    wb.SaveAs wb.Path & "\" & newFileNeme
-    wb.Close
 
-End Sub
-
+    filename = Left(nowFilename, InStrRev(nowFilename, ".") - 1)
+    fileExtension = Mid(nowFilename, InStrRev(nowFilename, ".") + 1, Len(nowFilename))
+    newFileNeme = filename & "_" & addString & "." & fileExtension
+    
+    AddStringFilename = newFileNeme
+    
+End Function
